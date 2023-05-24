@@ -5,8 +5,14 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+
+
+import javafx.animation.FadeTransition;
 import javafx.application.Application;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -18,11 +24,13 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class MainClass2 extends Application {
 	
@@ -31,8 +39,12 @@ public class MainClass2 extends Application {
 	Label lblNextLvl = new Label("   Next Level>>");
 	Label lblDrive = new Label("DRIVE ");
 	static int score = 0;
+	Label lblScore = new Label("Score: " + score);
 	int currentCityId = 0;
 	int selectedCityId = 0;
+	GridPane currentGP;
+	StackPane currentSPOut;
+	
 	
 	
 	
@@ -124,11 +136,11 @@ public class MainClass2 extends Application {
 
 		// Regulate the 10x10 grids in pane
 		for (int i = 0; i < 100; i++) {
-			Rectangle rectMid = new Rectangle(71, 71);
-			rectMid.setDisable(true);
+			Rectangle rectMid = new Rectangle(72, 72);
+			rectMid.setDisable(false);
 			rectMid.setFill(Color.TRANSPARENT);
 			rectMid.setStroke(Color.BLACK);
-			rectMid.setStrokeWidth(1);
+			rectMid.setStrokeWidth(0.1);
 
 			StackPane spCenter = new StackPane();
 			spCenter.getChildren().addAll(rectMid, new Label(String.valueOf(i + 1)));
@@ -137,12 +149,17 @@ public class MainClass2 extends Application {
 			gpCenter.add(spCenter, i % 10, i / 10);
 			gpCenter.setId(String.valueOf(i + 1));
 			//gpCenter.setDisable(true);
-			gpCenter.setAlignment(Pos.CENTER);
+			gpCenter.setAlignment(Pos.TOP_LEFT);
 			gpCenter.setVgap(0);
 			gpCenter.setHgap(0);
 		}
 		spOutCenter.getChildren().add(gpCenter);
+		spOutCenter.setAlignment(Pos.CENTER);
+		spOutCenter.setMinSize(720, 720);
+		spOutCenter.setMaxSize(720, 720);
 		mainBP.setCenter(spOutCenter);
+		currentGP = gpCenter;
+		currentSPOut = spOutCenter;
 		
 		// stack pane for Bottom Part 
 		StackPane spBottom = new StackPane();
@@ -429,7 +446,7 @@ public class MainClass2 extends Application {
 
 		// Create the labels of the top part
 		Label lblLevel = new Label(" Level#" + lvlCounter);
-		Label lblScore = new Label("Score:" + score);
+		
 		
 		fpTop.setAlignment(Pos.CENTER_LEFT);
 		fpTop.setHgap(274);
@@ -722,8 +739,56 @@ class DriveHandler implements EventHandler<MouseEvent> {
 				}
 
 			}
+			
 			scoreCalculator();
 			makeAnimation(indexList);
+			
+			int vehicleRow = 0;
+			int vehicleColumn = 0;
+			
+			for (City city : cityList) {
+				if (city.getCityId() == currentCityId) {
+					vehicleRow = city.getLocRow();
+					vehicleColumn = city.getLocCol();
+				}
+			}
+			
+			if (((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().size() >= 3){
+				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setTop(null);
+			}
+			
+			for (City city : cityList) {
+				if (city.getCityId() == selectedCityId) {
+					city.getLogo().setOpacity(1);
+				}
+			}
+			
+			currentCityId = selectedCityId;
+			selectedCityId = 0;
+			
+			vehicleList.get(0).setCurrentId(currentCityId);
+			
+			for (City city : cityList) {
+				if (city.getCityId() == currentCityId) {
+					city.getLogo().setOpacity(0.6);
+					vehicleRow = city.getLocRow();
+					vehicleColumn = city.getLocCol();
+				}
+			}
+			
+			ImageView imageVehicle = vehicleList.get(0).getLogo();
+			if (((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().size() >= 3){
+				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setTop(imageVehicle);
+				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setAlignment(imageVehicle, Pos.CENTER_RIGHT);
+			}
+			else {
+				BorderPane newBP = new BorderPane();
+				((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().add(newBP);
+				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setTop(imageVehicle);
+				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setAlignment(imageVehicle, Pos.CENTER_RIGHT);
+			}
+			
+			
 
 		}
 
@@ -1097,13 +1162,67 @@ class DriveHandler implements EventHandler<MouseEvent> {
 		}
 		
 		public void scoreCalculator () {
-		int	scoreCalc = (int)(Math.sqrt(Math.pow(Math.abs(startRowIndex-finishRowIndex),2)+ Math.pow(Math.abs(startRowIndex-finishRowIndex),2)));
-		score+=scoreCalc;
+			int distance = 0;
+			int income = 0;
+			int passengerNum = 0;
+			double scoreCalc = 0;
+			
+			for (Passenger passengers : passengerList) {
+				if (passengers.getStartCityId() == currentCityId && passengers.getDestCityId() == selectedCityId) {
+					passengerNum = passengers.getNumOfPes();
+					passengers.setNumOfPes(passengers.getNumOfPes() - vehicleList.get(0).getPasCap());
+					
+				}
+				
+			}
+			
+			
+			scoreCalc = (Math.sqrt(Math.pow(Math.abs(startRowIndex-finishRowIndex), 2)+ Math.pow(Math.abs(startRowIndex - finishRowIndex), 2)));
+			
+			distance += scoreCalc;
+			
+			income = (int)(passengerNum * (distance * 0.2));
+			score = income - distance;
+			
+			lblScore.setText("Score: " + score);
 		}
 		
 		
 		
 		public void makeAnimation(ArrayList<String> pointsInfo) {
+			for(int i=0;i<pointsInfo.size();i++) {
+				for(int j= i + 1;j<pointsInfo.size();j++) {
+					if((pointsInfo.get(i)).charAt(0)==(pointsInfo.get(j)).charAt(0) && (pointsInfo.get(i)).charAt(2)==(pointsInfo.get(j)).charAt(2)) {
+						pointsInfo.remove(j);
+					}
+					
+				}
+			}
+			
+		
+				Polyline polyline = new Polyline() ;
+			
+				
+				double x,y;
+			for(String index : pointsInfo) {
+				x=(index.charAt(2) - 48) * (currentSPOut.getWidth() / 10) + (currentSPOut.getWidth() / 20);
+				y=(index.charAt(0) - 48) * (currentSPOut.getHeight() / 10) + (currentSPOut.getHeight() / 20);
+			
+				polyline.getPoints().add(x);
+				polyline.getPoints().add(y);
+				
+			}
+			
+			polyline.setStroke(Color.RED);
+			polyline.setStrokeWidth(4);
+			currentSPOut.getChildren().add(polyline);
+			
+			//FadeTransition fadetr =new FadeTransition(Duration.millis(3000),polyline);
+			//fadetr.setFromValue(0.0);
+			//fadetr.setToValue(1.0);
+			//fadetr.setCycleCount(1);
+			//fadetr.setAutoReverse(false);
+			//fadetr.play();
 			
 			
 		}
