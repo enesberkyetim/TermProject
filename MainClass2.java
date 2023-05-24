@@ -116,6 +116,7 @@ public class MainClass2 extends Application {
 		
 		// Center Grid Pane
 		
+		StackPane spOutCenter = new StackPane();
 		
 		GridPane gpCenter = new GridPane();
 		gpCenter.setVgap(0);
@@ -140,7 +141,8 @@ public class MainClass2 extends Application {
 			gpCenter.setVgap(0);
 			gpCenter.setHgap(0);
 		}
-		mainBP.setCenter(gpCenter);
+		spOutCenter.getChildren().add(gpCenter);
+		mainBP.setCenter(spOutCenter);
 		
 		// stack pane for Bottom Part 
 		StackPane spBottom = new StackPane();
