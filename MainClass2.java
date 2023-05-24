@@ -265,8 +265,16 @@ public class MainClass2 extends Application {
 				ImageView imageVehicle = vehicleMain.getLogo();
 				((BorderPane)((StackPane)(gpCenter.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setTop(imageVehicle);
 				((BorderPane)((StackPane)(gpCenter.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setAlignment(imageVehicle, Pos.CENTER_RIGHT);
-				((City)(cityList.get(cityIdForVehicle - 1))).getLogo().setOpacity(0.6);
+				
+				for (City city : cityList) {
+					if (city.getCityId() == cityIdForVehicle) {
+						city.getLogo().setOpacity(0.6);
+					}
+					
+				}
+				
 				vehicleList.add(vehicleMain);
+				currentCityId = cityIdForVehicle;
 				data = "";
 				
 			}
@@ -395,7 +403,6 @@ public class MainClass2 extends Application {
 			
 		}
 		
-		currentCityId = cityList.get(0).getCityId();
 		/////
 		////
 		///
@@ -742,14 +749,56 @@ class DriveHandler implements EventHandler<MouseEvent> {
 
 			}
 			
-			if (x[1] == finishColIndex) {
-				indexxy[0] = x[0];
-				indexxy[1] = finishColIndex + 1;
-				indexList.add(x[0] + " " + (finishColIndex + 1));
+			for (FixedCell fix : fixedCellList) {
+				if ((x[1] == fix.getCellCol()) && ((x[0] == fix.getCellRow() + 1) || (x[0] == fix.getCellRow() - 1))) {
+					indexxy[0] = x[0];
+					indexxy[1] = x[1] + 1;
+					indexList.add(x[0] + " " + (x[1] + 1));
+					indexNum++;
+					
+					for (FixedCell fix2 : fixedCellList) {
+						if ((indexxy[1] > finishColIndex) && (indexxy[1] == fix2.getCellCol())) {
+							indexxy[2] = 0;
+							break;
+						}
+						else {
+							if (indexxy[0] < finishRowIndex) {
+								indexxy[2] = 1;
+							}
+							else if (indexxy[0] > finishRowIndex) {
+								indexxy[2] = 3;
+							}
+						}
+					}
+					return indexxy;
+				}
+			}
+			
+			if (x[0] == finishRowIndex) {
+				indexxy[0] = finishRowIndex;
+				indexxy[1] = finishColIndex;
+				indexList.add(finishRowIndex + " " + finishColIndex);
 				indexNum++;
-				indexxy[2] = 3;
 				return indexxy;
 			}
+			
+			for (FixedCell fix : fixedCellList) {
+				if (x[0] == fix.getCellRow()) {
+					indexxy[0] = x[0];
+					indexxy[1] = x[1];
+					indexList.add(x[0] + " " + x[1]);
+					indexNum++;
+					
+					if (indexxy[0] < finishRowIndex) {
+						indexxy[2] = 1;
+					}
+					else if (indexxy[0] > finishRowIndex) {
+						indexxy[2] = 3;
+					}
+					return indexxy;
+				}
+			}
+			
 			indexxy[0] = x[0];
 			indexxy[1] = finishColIndex;
 			indexList.add(x[0] + " " + finishColIndex);
@@ -788,22 +837,59 @@ class DriveHandler implements EventHandler<MouseEvent> {
 
 			}
 			
-			if (x[1] == finishColIndex) {
-				indexxy[0] = x[0];
-				indexxy[1] = finishColIndex - 1;
-				indexList.add(x[0] + " " + (finishColIndex - 1));
+
+			for (FixedCell fix : fixedCellList) {
+				if ((x[1] == fix.getCellCol()) && ((x[0] == fix.getCellRow() + 1) || (x[0] == fix.getCellRow() - 1))) {
+					indexxy[0] = x[0];
+					indexxy[1] = x[1] - 1;
+					indexList.add(x[0] + " " + (x[1] - 1));
+					indexNum++;
+					
+					for (FixedCell fix2 : fixedCellList) {
+						if ((indexxy[1] < finishColIndex) && (indexxy[1] == fix2.getCellCol())) {
+							indexxy[2] = 2;
+							break;
+						}
+						else {
+							if (indexxy[0] < finishRowIndex) {
+								indexxy[2] = 1;
+							}
+							else if (indexxy[0] > finishRowIndex) {
+								indexxy[2] = 3;
+							}
+						}
+					}
+					
+					return indexxy;
+				}
+			}
+			
+			if (x[0] == finishRowIndex) {
+				indexxy[0] = finishRowIndex;
+				indexxy[1] = finishColIndex;
+				indexList.add(finishRowIndex + " " + finishColIndex);
 				indexNum++;
-				
-				if (indexxy[0] < finishRowIndex) {
-					indexxy[2] = 1;
-				}
-				else if (indexxy[0] > finishRowIndex) {
-					indexxy[2] = 3;
-				}
 				return indexxy;
 			}
 			
-			
+			for (FixedCell fix : fixedCellList) {
+				if (x[0] == fix.getCellRow()) {
+					indexxy[0] = x[0];
+					indexxy[1] = x[1];
+					indexList.add(x[0] + " " + x[1]);
+					indexNum++;
+					
+					if (indexxy[0] < finishRowIndex) {
+						indexxy[2] = 1;
+					}
+					else if (indexxy[0] > finishRowIndex) {
+						indexxy[2] = 3;
+					}
+					
+					return indexxy;
+				}
+			}
+				
 			indexxy[0] = x[0];
 			indexxy[1] = finishColIndex;
 			indexList.add(x[0] + " " + finishColIndex);
@@ -845,19 +931,56 @@ class DriveHandler implements EventHandler<MouseEvent> {
 
 			}
 			
-			if (y[0] == finishRowIndex) {
-				indexxy[0] = finishRowIndex - 1;
-				indexxy[1] = y[1];
-				indexList.add((finishRowIndex - 1) + " " + y[1]);
+			for (FixedCell fix : fixedCellList) {
+				if ((y[0] == fix.getCellRow()) && ((y[1] == fix.getCellCol() + 1) || (y[1] == fix.getCellCol() - 1))) {
+					indexxy[0] = y[0] - 1;
+					indexxy[1] = y[1];
+					indexList.add((y[0] - 1) + " " + y[1]);
+					indexNum++;
+					
+					for (FixedCell fix2 : fixedCellList) {
+						if ((indexxy[0] < finishRowIndex) && (indexxy[0] == fix2.getCellCol())) {
+							indexxy[2] = 3;
+							break;
+						}
+						else {
+							if (indexxy[1] < finishColIndex) {
+								indexxy[2] = 0;
+							}
+							else if (indexxy[1] > finishColIndex) {
+								indexxy[2] = 2;
+							}
+						}
+					}
+					
+					return indexxy;
+				}
+			}
+			
+			if (y[1] == finishColIndex) {
+				indexxy[0] = finishRowIndex;
+				indexxy[1] = finishColIndex;
+				indexList.add(finishRowIndex + " " + finishColIndex);
 				indexNum++;
-				
-				if (indexxy[1] < finishColIndex) {
-					indexxy[2] = 0;
-				}
-				else if (indexxy[1] > finishColIndex) {
-					indexxy[2] = 2;
-				}
 				return indexxy;
+			}
+			
+			for (FixedCell fix : fixedCellList) {
+				if (y[1] == fix.getCellCol()) {
+					indexxy[0] = y[0];
+					indexxy[1] = y[1];
+					indexList.add(y[0] + " " + y[1]);
+					indexNum++;
+					
+					if (indexxy[1] < finishColIndex) {
+						indexxy[2] = 0;
+					}
+					else if (indexxy[1] > finishColIndex) {
+						indexxy[2] = 2;
+					}
+					
+					return indexxy;
+				}
 			}
 			
 			indexxy[0] = finishRowIndex;
@@ -873,6 +996,9 @@ class DriveHandler implements EventHandler<MouseEvent> {
 			}
 			
 			return indexxy;
+			
+			
+			
 		}
 
 		public int[] verticalDown(int[] y, int finishColIndex, int finishRowIndex) {
@@ -900,19 +1026,55 @@ class DriveHandler implements EventHandler<MouseEvent> {
 
 			}
 			
-			if (y[0] == finishRowIndex) {
-				indexxy[0] = finishRowIndex + 1;
-				indexxy[1] = y[1];
-				indexList.add((finishRowIndex + 1) + " " + y[1]);
+			for (FixedCell fix : fixedCellList) {
+				if ((y[0] == fix.getCellRow()) && ((y[1] == fix.getCellCol() + 1) || (y[1] == fix.getCellCol() - 1))) {
+					indexxy[0] = y[0] + 1;
+					indexxy[1] = y[1];
+					indexList.add((y[0] + 1) + " " + y[1]);
+					indexNum++;
+					
+					for (FixedCell fix2 : fixedCellList) {
+						if ((indexxy[0] > finishRowIndex) && (indexxy[0] == fix2.getCellCol())) {
+							indexxy[2] = 3;
+							break;
+						}
+						else {
+							if (indexxy[1] < finishColIndex) {
+								indexxy[2] = 0;
+							}
+							else if (indexxy[1] > finishColIndex) {
+								indexxy[2] = 2;
+							}
+						}
+					}
+					return indexxy;
+				}
+			}
+			
+			if (y[1] == finishColIndex) {
+				indexxy[0] = finishRowIndex;
+				indexxy[1] = finishColIndex;
+				indexList.add(finishRowIndex + " " + finishColIndex);
 				indexNum++;
-				
-				if (indexxy[1] < finishColIndex) {
-					indexxy[2] = 0;
-				}
-				else if (indexxy[1] > finishColIndex) {
-					indexxy[2] = 2;
-				}
 				return indexxy;
+			}
+			
+			for (FixedCell fix : fixedCellList) {
+				if (y[1] == fix.getCellCol()) {
+					indexxy[0] = y[0];
+					indexxy[1] = y[1];
+					indexList.add(y[0] + " " + y[1]);
+					indexNum++;
+					
+					if (indexxy[1] < finishColIndex) {
+						indexxy[2] = 0;
+					}
+					else if (indexxy[1] > finishColIndex) {
+						indexxy[2] = 2;
+					}
+					
+					return indexxy;
+				}
 			}
 			
 			indexxy[0] = finishRowIndex;
@@ -928,6 +1090,8 @@ class DriveHandler implements EventHandler<MouseEvent> {
 			}
 			
 			return indexxy;
+				
+			
 		}
 		
 		public void scoreCalculator () {
