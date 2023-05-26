@@ -16,6 +16,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -87,7 +88,7 @@ public class MainClass2 extends Application {
 		lblDrive.setOnMouseClicked(hndDrive);
 		
 		// Set the resizable option of the stage
-		stage.setResizable(false);
+		stage.setResizable(true);
 
 		if (lvlCounter == 1) {
 			stage.setScene(levelPattern("levels\\level1.txt", scene));
@@ -112,7 +113,7 @@ public class MainClass2 extends Application {
 	public Scene levelPattern(String levelScript, Scene scene) throws FileNotFoundException {
 
 		BorderPane mainBP = new BorderPane();
-		scene = new Scene(mainBP, 720, 927);
+		scene = new Scene(mainBP, 750, 970);
 		
 		// Clear the fixed cell arrayList to pass the new level
 		fixedCellList.clear();
@@ -149,14 +150,12 @@ public class MainClass2 extends Application {
 			gpCenter.add(spCenter, i % 10, i / 10);
 			gpCenter.setId(String.valueOf(i + 1));
 			//gpCenter.setDisable(true);
-			gpCenter.setAlignment(Pos.TOP_LEFT);
+			gpCenter.setAlignment(Pos.CENTER);
 			gpCenter.setVgap(0);
 			gpCenter.setHgap(0);
 		}
 		spOutCenter.getChildren().add(gpCenter);
 		spOutCenter.setAlignment(Pos.CENTER);
-		spOutCenter.setMinSize(720, 720);
-		spOutCenter.setMaxSize(720, 720);
 		mainBP.setCenter(spOutCenter);
 		currentGP = gpCenter;
 		currentSPOut = spOutCenter;
@@ -200,7 +199,7 @@ public class MainClass2 extends Application {
 		// Take the data from the level text documents
 		while (outputOfIns.hasNext()) {
 			String x = outputOfIns.nextLine();
-			vBoxIns.getChildren().add(new Label(x));
+			//vBoxIns.getChildren().add(new Label(x));
 			
 			// Finding fixed cells part 
 			if(x.startsWith("Fixed,")) {
@@ -349,6 +348,7 @@ public class MainClass2 extends Application {
 				provinceInfo.setOpacity(1);
 				cityInfoPane.setBottom(provinceInfo);
 				cityInfoPane.setAlignment(provinceInfo, Pos.BOTTOM_CENTER);
+				
 				((StackPane)(gpCenter.getChildren().get((cityRow * 10) + cityColumn))).getChildren().addAll(city.getLogo(), cityInfoPane);
 				
 				if (cityList.size() != 0) {
@@ -358,6 +358,37 @@ public class MainClass2 extends Application {
 						@Override
 						public void handle(MouseEvent arg0) {
 							selectedCityId = this.getCity().getCityId();
+							int r =0;
+							int c=0;
+							String currentCity="";
+							for(City city:cityList) {
+								if(city.getCityId()==currentCityId) {
+									r=city.getLocRow();
+									c=city.getLocCol();
+									currentCity=city.getCityName();
+									
+								}
+							}
+							int distance=(int) Math.ceil((Math.sqrt(Math.pow(Math.abs(r-selectedCity.getLocRow()), 2)+ Math.pow(Math.abs(c - selectedCity.getLocCol()), 2))));
+							Label x =new Label(selectedCity+" (City ID : "+selectedCityId+",Distance : "+distance+",Vehicle Capacity : "+vehicleList.get(0).getPasCap());
+							vBoxIns.getChildren().add(x);
+							for(Passenger passenger:passengerList) {
+								if(passenger.getStartCityId()==currentCityId && passenger.getDestCityId()==selectedCityId) {
+									Label a =new Label(currentCity+" > "+selectedCity.getCityName());
+									vBoxIns.getChildren().add(a);
+								}
+								if(passenger.getStartCityId()==selectedCityId) {
+									String desCityName="";
+									for(City city:cityList) {
+										if (city.getCityId()==passenger.getDestCityId()) {
+										desCityName=city.getCityName();
+										}
+									}
+								
+									Label b=new Label(selectedCity.getCityName()+" > "+desCityName);
+									vBoxIns.getChildren().add(b);
+								}
+							}
 						}
 						public City getCity() {
 							return selectedCity;
@@ -788,6 +819,7 @@ class DriveHandler implements EventHandler<MouseEvent> {
 				((BorderPane)((StackPane)(currentGP.getChildren().get((vehicleRow * 10) + vehicleColumn))).getChildren().get(3)).setAlignment(imageVehicle, Pos.CENTER_RIGHT);
 			}
 			
+			indexList.clear();
 			
 
 		}
@@ -1179,7 +1211,7 @@ class DriveHandler implements EventHandler<MouseEvent> {
 			
 			scoreCalc = (Math.sqrt(Math.pow(Math.abs(startRowIndex-finishRowIndex), 2)+ Math.pow(Math.abs(startRowIndex - finishRowIndex), 2)));
 			
-			distance += scoreCalc;
+			distance += Math.ceil(scoreCalc);
 			
 			income = (int)(passengerNum * (distance * 0.2));
 			score = income - distance;
@@ -1190,40 +1222,133 @@ class DriveHandler implements EventHandler<MouseEvent> {
 		
 		
 		public void makeAnimation(ArrayList<String> pointsInfo) {
-			for(int i=0;i<pointsInfo.size();i++) {
-				for(int j= i + 1;j<pointsInfo.size();j++) {
-					if((pointsInfo.get(i)).charAt(0)==(pointsInfo.get(j)).charAt(0) && (pointsInfo.get(i)).charAt(2)==(pointsInfo.get(j)).charAt(2)) {
-						pointsInfo.remove(j);
-					}
-					
+			ArrayList<String> allPoints = new ArrayList<String>();
+			
+			for (int i = 1; i < pointsInfo.size(); i++) {
+				if (pointsInfo.get(i).equals(pointsInfo.get(i - 1))) {
+					pointsInfo.set(i - 1, "duplicate");
 				}
 			}
 			
-		
-				Polyline polyline = new Polyline() ;
+			for (int i = 0; i < pointsInfo.size(); i++) {
+				if (pointsInfo.get(i).equals("duplicate")) {
+					pointsInfo.remove(i);
+				}
+			}
 			
+			for (int i = 0; i < pointsInfo.size() - 1; i++) {
+				int[] startPoint = new int[2];
+				int[] endPoint = new int[2];
 				
-				double x,y;
-			for(String index : pointsInfo) {
-				x=(index.charAt(2) - 48) * (currentSPOut.getWidth() / 10) + (currentSPOut.getWidth() / 20);
-				y=(index.charAt(0) - 48) * (currentSPOut.getHeight() / 10) + (currentSPOut.getHeight() / 20);
-			
-				polyline.getPoints().add(x);
-				polyline.getPoints().add(y);
+				startPoint[0] = pointsInfo.get(i).charAt(0) - 48;
+				startPoint[1] = pointsInfo.get(i).charAt(2) - 48;
+				
+				endPoint[0] = pointsInfo.get(i + 1).charAt(0) - 48;
+				endPoint[1] = pointsInfo.get(i + 1).charAt(2) - 48;
+				
+				int firstRow = startPoint[0];
+				int firstCol = startPoint[1];
+				int secondRow = endPoint[0];
+				int secondCol = endPoint[1];
+				
+				if (firstRow == secondRow) {
+					int gap = 0;
+					
+					if (secondCol > firstCol) {
+						gap = secondCol - firstCol;
+						
+						for (int j = 0; j < gap; j++) {
+							allPoints.add(firstRow + " " + (firstCol + j));
+						}
+					}
+					if (firstCol > secondCol) {
+						gap = firstCol - secondCol;
+						
+						for (int j = 0; j < gap; j++) {
+							allPoints.add(firstRow + " " + (firstCol - j));
+						}
+					}
+				}
+				if (firstCol == secondCol) {
+					int gap = 0;
+					
+					if (secondRow > firstRow) {
+						gap = secondRow - firstRow;
+						
+						for (int j = 0; j < gap; j++) {
+							allPoints.add((firstRow + j) + " " + firstCol);
+						}
+					}
+					if (firstRow > secondRow) {
+						gap = firstRow - secondRow;
+						
+						for (int j = 0; j < gap; j++) {
+							allPoints.add((firstRow - j) + " " + firstCol);
+						}
+					}
+				}
 				
 			}
 			
-			polyline.setStroke(Color.RED);
-			polyline.setStrokeWidth(4);
-			currentSPOut.getChildren().add(polyline);
+			allPoints.add(pointsInfo.get(pointsInfo.size() - 1));
 			
-			//FadeTransition fadetr =new FadeTransition(Duration.millis(3000),polyline);
-			//fadetr.setFromValue(0.0);
-			//fadetr.setToValue(1.0);
-			//fadetr.setCycleCount(1);
-			//fadetr.setAutoReverse(false);
-			//fadetr.play();
+			for (int i = 1; i < allPoints.size() - 1; i++) {
+				int beforeRow = allPoints.get(i - 1).charAt(0) - 48;
+				int beforeCol = allPoints.get(i - 1).charAt(2) - 48;
+				int currentRow = allPoints.get(i).charAt(0) - 48;
+				int currentCol = allPoints.get(i).charAt(2) - 48;
+				int afterRow = allPoints.get(i + 1).charAt(0) - 48;
+				int afterCol = allPoints.get(i + 1).charAt(2) - 48;
+				
+				if (beforeRow == afterRow || beforeCol == afterCol) {
+					if (currentRow == afterRow) {
+						ImageView path = new ImageView("logos\\horizontal_line.png");
+						((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+					}
+					if (currentCol == afterCol) {
+						ImageView path = new ImageView("logos\\vertical_line.png");
+						((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+					}
+				}
+				else {
+					if (beforeCol == currentCol || afterCol == currentCol) {
+						if ((afterCol > beforeCol) && (afterCol > currentCol) && (afterRow > beforeRow)) {
+							ImageView path = new ImageView("logos\\pos_x_pos_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((afterCol > beforeCol) && (afterCol > currentCol) && (beforeRow > afterRow)) {
+							ImageView path = new ImageView("logos\\pos_x_neg_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((beforeCol > afterCol) && (beforeCol > currentCol) && (beforeRow > afterRow)) {
+							ImageView path = new ImageView("logos\\pos_x_pos_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((beforeCol > afterCol) && (beforeCol > currentCol) && (afterRow > beforeRow)) {
+							ImageView path = new ImageView("logos\\pos_x_neg_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((beforeCol > afterCol) && (currentCol > afterCol) && (beforeRow > afterRow)) {
+							ImageView path = new ImageView("logos\\neg_x_neg_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((beforeCol > afterCol) && (currentCol > afterCol) && (afterRow > beforeRow)) {
+							ImageView path = new ImageView("logos\\neg_x_pos_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((afterCol > beforeCol) && (currentCol > beforeCol) && (afterRow > beforeRow)) {
+							ImageView path = new ImageView("logos\\neg_x_neg_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+						if ((afterCol > beforeCol) && (currentCol > beforeCol) && (beforeRow > afterRow)) {
+							ImageView path = new ImageView("logos\\neg_x_pos_y_line.png");
+							((StackPane)(currentGP.getChildren().get((currentRow * 10) + currentCol))).getChildren().add(path);
+						}
+					}
+				}
+			}
 			
+			int b = 0;
 			
 		}
 
